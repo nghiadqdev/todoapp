@@ -5,7 +5,6 @@ import CameraRoll from '@react-native-community/cameraroll';
 import screenStyles from '../../config/screenStyles';
 import { checkPermissionPhoto, deviceWidth } from '../../config';
 import {request, PERMISSIONS, RESULTS, openSettings} from 'react-native-permissions'
-import ReviewImage from './review'
 import ImageViewer from 'react-native-image-zoom-viewer';
 
 const ImageGallery = () => {

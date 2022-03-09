@@ -79,7 +79,7 @@ const CountryListScreen = ({navigation, route}) => {
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={() => (
                         <View style={screenStyles.flexCenter}>
-                            <Text>{`Search something`}</Text>
+                            <Text style={{color: 'black'}}>{`Search something`}</Text>
                         </View>
                     )}
                 />

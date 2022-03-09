@@ -89,7 +89,7 @@ const TodoListScreen = ({navigation, route}) => {
     } else {
         return (
             <View style={screenStyles.flexCenter}>
-                <Text>{`You don't have task now`}</Text>
+                <Text style={{color: 'black'}}>{`You don't have task now`}</Text>
             </View>
         )
     }
@@ -103,7 +103,7 @@ const TodoListScreen = ({navigation, route}) => {
             <Text style={styles.txtDot}>{'.'}</Text>
             <Text style={[styles.txtTast, item.isDone && {textDecorationLine: 'line-through'}]}>{item?.value}</Text>
             <TouchableOpacity onPress={() => handleDeleteTast(item)}>
-                <Text>{'Delete'}</Text>
+                <Text style={{color: 'black'}}>{'Delete'}</Text>
             </TouchableOpacity>
         </TouchableOpacity>
     )
@@ -168,7 +168,8 @@ const styles = StyleSheet.create({
     txtDot: {fontSize: 20, fontWeight: '800', marginRight:4},
     txtTitle: {
         fontSize: 14,
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        color: 'black',
     },
 
 })

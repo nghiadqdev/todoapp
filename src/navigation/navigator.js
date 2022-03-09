@@ -99,6 +99,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     flex: 1,
+    color: 'black',
   },
   txtIndex: {
     fontSize: 14,
