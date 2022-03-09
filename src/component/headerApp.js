@@ -11,7 +11,7 @@ const headerApp = (props) => {
     <View style={styles.containtStyle}>
       {isBack ? <TouchableOpacity onPress={navigationGoBack}>
           <Text style={styles.txtBack}>{'<'}</Text>
-      </TouchableOpacity> : null}
+      </TouchableOpacity> : <View style={styles.txtBack} />}
       <View style={styles.viewTitle}>
         <Text style={styles.txtTitle}>{title}</Text>
       </View>

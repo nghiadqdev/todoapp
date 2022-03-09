@@ -25,10 +25,10 @@ const CountryListScreen = ({navigation, route}) => {
     if (statusLoad === 0)
     getData()
   }, 700);
-  const getData = () => {
+  const getData = async () => {
     let searchkey = searchValue
     if (searchkey !== '') {
-        axios.get(`https://restcountries.com/v3.1/name/${searchkey}`)
+        await axios.get(`https://restcountries.com/v3.1/name/${searchkey}`)
           .then(res => {
           const persons = res.data;
           setListData(persons[0]?.altSpellings || [])
