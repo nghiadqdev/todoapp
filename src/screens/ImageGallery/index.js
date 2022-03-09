@@ -1,174 +1,273 @@
-import { FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity,
-    TouchableOpacityBase, View } from 'react-native'
-import React, { useMemo, useRef, useState } from 'react'
+import { ActivityIndicator, FlatList, Image, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React, { useEffect, useRef, useState } from 'react'
 import HeaderApp from '../../component/headerApp'
-import screenStyles from '../../config/screenStyles'
-import { deviceWidth, showToast } from '../../config'
-import { Input } from 'react-native-elements'
-import Toast from '../../component/Toast'
+import CameraRoll from '@react-native-community/cameraroll';
+import screenStyles from '../../config/screenStyles';
+import { checkPermissionPhoto, deviceWidth } from '../../config';
+import {request, PERMISSIONS, RESULTS, openSettings} from 'react-native-permissions'
+import ReviewImage from './review'
+import ImageViewer from 'react-native-image-zoom-viewer';
 
-const TodoListScreen = ({navigation, route}) => {
+const ImageGallery = () => {
+  const listFooterImgRef = useRef(null)
+  const [listImage, setListImage] = useState([])
+  const [endLoadImage, setEndLoadImage] = useState({
+    nextPage: true,
+    endCursor: '',
+    startCursor: '',
+  })
+  const [loadMoreImg, setLoadMoreImg] = useState(false)
+  const [modalDetail, setModalDetail] = useState(false)
+  const [indexSelect, setindexSelect] = useState(-1)
+  const [isScale, setScale] = useState(false)
 
-  // state
-  const toastRef = useRef(null)
-  const [newTodo, setNewTodo] = useState('')
-  const [listTodo, setListTodo] = useState({})
+  useEffect(() => {
+    checkPermisstion()
+  }, []);
 
   //action
-  const handleChangeText = (text) => {
-      setNewTodo(text)
-  }
-  const handleAddNewTask = () => {
-    let list = Object.keys(listTodo)
-    if (newTodo !== '') {
-        let params = {
-            id: parseInt(list?.[list.length - 1] || 1) + 1,
-            value: newTodo,
-            isDone: false,
-        }
-        let temp = {...listTodo, [params.id]: params}
-        setNewTodo('')
-        setListTodo(temp)
-    } else {
-        showToast(toastRef, 'Value can not be null')
+  const checkPermisstion = async () => {
+    let resultCheckPhoto = await checkPermissionPhoto();
+    switch (resultCheckPhoto) {
+      case RESULTS.UNAVAILABLE:
+        showToast('Can not get gallery!');
+        break;
+      case RESULTS.DENIED:
+        return request(
+          Platform.OS === 'ios'
+            ? PERMISSIONS.IOS.PHOTO_LIBRARY
+            : PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE,
+        ).then(res => {
+          if (res === RESULTS.GRANTED) {
+            loadImage();
+            return;
+          } else {
+            return false;
+          }
+        });
+      case RESULTS.GRANTED:
+        loadImage();
+        break;
+      case RESULTS.LIMITED:
+        loadImage();
+        break;
+      case RESULTS.BLOCKED:
+        _alertForGalleryPermission();
+        break;
     }
   }
-  const handleSelectTask = (item) => {
-    if (item.id) {
-        let status = item.isDone
-        let temp = {...listTodo, [item.id]: {...item, isDone: !status}}
-        setListTodo(temp)
+  const loadImage = async () => { 
+    var allImage = [...listImage]
+    if (endLoadImage.endCursor === '') {
+        await CameraRoll.getPhotos({
+        first: 29,
+        assetType: 'Photos',
+        })
+        .then( img => {
+            setEndLoadImage({
+            nextPage: img.page_info.has_next_page,
+            endCursor: img.page_info.end_cursor,
+            startCursor: img.page_info.start_cursor,
+            });
+            img.edges.forEach(element => {
+                allImage.push({url: element.node.image.uri});
+            });
+        })
+        .catch(err => {
+            _alertForGalleryPermission();
+        });
+        setListImage(allImage);
+    } else if (endLoadImage.nextPage) {
+        setLoadMoreImg(true);
+        await CameraRoll.getPhotos({
+        first: 15,
+        assetType: 'Photos',
+        after: endLoadImage.endCursor,
+        })
+        .then( img => {
+            setEndLoadImage({
+            nextPage: img.page_info.has_next_page,
+            endCursor: img.page_info.end_cursor,
+            startCursor: img.page_info.start_cursor,
+            });
+            img.edges.forEach(element => {
+            allImage.push({url: element.node.image.uri});
+            });
+        })
+        .catch(err => {
+            _alertForGalleryPermission();
+        });
+        setListImage(allImage);
     }
+    setLoadMoreImg(false);
   }
-  const handleDeleteTast = (item) => {
-      let temp = {...listTodo}
-      delete temp?.[item.id]
-      setListTodo(temp)
+  const gotoDetail = (index) => {
+    setModalDetail(true)
+    setindexSelect(index)
+    setTimeout(() => {
+      if (listFooterImgRef.current) {
+        listFooterImgRef.current.scrollTo({x: index * 60 - 90, y: 0, animated: true})
+      }
+    }, 300);
   }
-
+  function _alertForGalleryPermission() {
+    Alert.alert(
+        'Access to photos?',
+        [
+        {
+            text: 'No',
+            onPress: () => console.log('Permission denied'),
+            style: 'cancel',
+        },
+        {
+            text: 'OK',
+            onPress: () =>
+            openSettings().catch(() => console.warn('cannot open settings')),
+        },
+        ],
+    );
+  }
+  const closeModal = () => setModalDetail(false)
+  const handleScaleImg = (position) => {
+    setScale(position.scale > 1)
+  }
+  const handleChangeImg = (index) => {
+    setindexSelect(index)
+    listFooterImgRef.current.scrollTo({x: index * 60 - 90, y: 0, animated: true})
+  }
   //render
-  const renderInput = useMemo(() => {
+  const _renderItemImage = (item, index) => {
       return(
-        <Input
-            value={newTodo}
-            onChangeText={handleChangeText}
-            placeholder={'Search'}
-            rightIcon={() => <Pressable onPress={handleAddNewTask}>
-                <Text style={styles.txtAdd}>{'Add'}</Text>
-            </Pressable>}
-            renderErrorMessage={false}
-            containerStyle={styles.containtInput}
-            inputContainerStyle={styles.inputContainStyle}
-        />
+          <TouchableOpacity onPress={() => gotoDetail(index)} style={styles.viewItemImage}>
+              <Image style={styles.imageStyle} resizeMethod='resize' source={{uri: item?.url}}/>
+          </TouchableOpacity>
       )
-  }, [newTodo])
-
-  const renderListTodo = () => {
-    let listTask = Object.values(listTodo)
-    if (listTask.length > 0) {
-        let numTask = listTask.filter((i) => !i.isDone).length
-        let numList = listTask.length
-        return(
-            <View style={styles.containList}>
-                <FlatList
-                    data={listTask}
-                    extraData={listTask}
-                    keyExtractor={(_, index) => index.toString()}
-                    renderItem={({item, index}) => renderItem(item, index)}
-                    showsVerticalScrollIndicator={false}
-                    ListHeaderComponent={() => (
-                        <View style={screenStyles.row}>
-                            <Text style={styles.txtTitle}>{`There are `}</Text>
-                            <Text style={[styles.txtTitle, {color: 'red'}]}>{numTask}</Text>
-                            <Text style={styles.txtTitle}>{` tasks left out of ${numList} tasks`}</Text>
-                        </View>
-                    )}
-                />
-            </View>
-        )
-    } else {
-        return (
-            <View style={screenStyles.flexCenter}>
-                <Text>{`You don't have task now`}</Text>
-            </View>
-        )
-    }
   }
 
-  const renderRedNumber = (number) => <Text style={{color: 'red'}}>{number}</Text>
-
-  const renderItem = (item, index) => {
-    return (
-        <TouchableOpacity onPress={() => handleSelectTask(item)} style={styles.containtItem}>
-            <Text style={styles.txtDot}>{'.'}</Text>
-            <Text style={[styles.txtTast, item.isDone && {textDecorationLine: 'line-through'}]}>{item?.value}</Text>
-            <TouchableOpacity onPress={() => handleDeleteTast(item)}>
-                <Text>{'Delete'}</Text>
+  const headerModal = () => {
+      if (!isScale)
+      return(
+        <View style={styles.containtStyle}>
+            <TouchableOpacity onPress={closeModal}>
+              <Text style={styles.txtBack}>{'<'}</Text>
             </TouchableOpacity>
-        </TouchableOpacity>
+            <View style={styles.viewTitle}>
+              <Text style={styles.txtTitle}>{'Preview'}</Text>
+            </View>
+        </View>
+      )
+  }
+
+  const footerModal = () => {
+      if (!isScale)
+      return(
+      <View style={styles.viewFooter}>
+        <ScrollView ref={listFooterImgRef} horizontal showsHorizontalScrollIndicator={false} style={{paddingLeft: 90}}>
+            {listImage.map((item, index) => <Image key={index} source={{uri: item.url}} style={[styles.itemImgFooter, {opacity: index === indexSelect ? 1 : 0.3}]} />)}
+        </ScrollView>
+      </View>
+    )
+}
+
+  const modalViewDetail = () => {
+    return(
+        <Modal
+        visible={modalDetail}
+        animationType={'fade'}
+        transparent={true}
+        supportedOrientations={[
+          'portrait',
+          'portrait-upside-down',
+          'landscape',
+          'landscape-left',
+          'landscape-right',
+        ]}>
+            <ImageViewer
+                backgroundColor={'white'}
+                enableSwipeDown
+                renderIndicator={() => null}
+                saveToLocalByLongPress={false}
+                useNativeDriver
+                onLongPress={() => {}}
+                onMove={handleScaleImg}
+                onSwipeDown={closeModal}
+                onChange={handleChangeImg}
+                index={indexSelect}
+                loadingRender={() => (
+                  <ActivityIndicator size="large" />
+                )}
+                renderHeader={headerModal}
+                renderFooter={footerModal}
+                imageUrls={listImage}/>
+        </Modal>
     )
   }
-
   return (
     <SafeAreaView style={screenStyles.flexCenter}>
-      <HeaderApp title={'Todo list'} />
-      <View style={styles.containtStyle}>
-        {renderInput}
-        {renderListTodo()}
+      <HeaderApp title={'Image gallery'} />
+      <View style={screenStyles.flex1}>
+        <FlatList
+            data={listImage}
+            extraData={listImage}
+            numColumns={3}
+            horizontal={false}
+            showsVerticalScrollIndicator={false}
+            keyExtractor={(_, index) => index.toString()}
+            onEndReached={loadImage}
+            onEndReachedThreshold={0.5}
+            renderItem={({item, index}) => _renderItemImage(item, index)}
+            ListFooterComponent={() => loadMoreImg ? <ActivityIndicator /> : <></>}
+        />
       </View>
-      <Toast ref={toastRef} position={'center'} />
+      {modalViewDetail()}
     </SafeAreaView>
   )
 }
 
-export default TodoListScreen
+export default ImageGallery
 
 const styles = StyleSheet.create({
+    viewItemImage: {
+        width: deviceWidth / 3,
+        height: deviceWidth / 3,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    imageStyle: {
+        width: '100%',
+        height: '100%',
+    },
     containtStyle: {
-        flex: 1,
         width: deviceWidth,
-        marginTop: 16,
-    },
-    containtInput: {
-        width: deviceWidth - 30,
-        alignSelf: 'center',
-        marginVertical: 10,
-        borderWidth: 1,
-        borderRadius: 8,
-    },
-    inputContainStyle: {
-        padding: 0, borderBottomWidth: 0
-    },
-    containList: {
-      paddingHorizontal: 15,
-      marginTop: 5,
-      flex: 1,
-    },
-    txtAdd: {
-        fontSize: 14,
-        color: '#EF4638',
-        fontWeight: 'bold',
-    },
-    viewItem: {
-        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        flex: 1,
-        height: 30,
-    },
-    containtItem: {
         flexDirection: 'row',
-        margin: 8,
-        alignItems: 'center',
+        paddingHorizontal: 15,
+        backgroundColor: 'white',
+        display: 'flex',
     },
-    txtTast: {
-        fontSize: 14,
-        color: '#000000',
-        flex: 1,
+    txtBack: {
+        color: '#262626',
+        fontWeight: '500',
+        fontSize: 18,
+        width: 30,
     },
-    txtDot: {fontSize: 20, fontWeight: '800', marginRight:4},
     txtTitle: {
+        textAlign: 'center',
+        color: '#EF4638',
+        fontWeight: '800',
         fontSize: 14,
-        fontWeight: 'bold'
     },
-
+    viewTitle: {
+        flex: 1,
+        paddingRight: 30,
+    },
+    viewFooter: {
+        height: 90,
+        width: deviceWidth,
+    },
+    itemImgFooter: {
+        width: 60,
+        height: 90,
+    }
 })
