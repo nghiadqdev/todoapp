@@ -1,7 +1,6 @@
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React from 'react'
-// import { navigationGoBack } from '../navigation/navigationService'
-import screenStyles from '../config/screenStyles'
+import { navigationGoBack } from '../navigation/navigationService'
 
 const {width, height} = Dimensions.get('window')
 const headerApp = (props) => {
@@ -10,7 +9,7 @@ const headerApp = (props) => {
 
   return (
     <View style={styles.containtStyle}>
-      {isBack ? <TouchableOpacity onPress={()=>{}}>
+      {isBack ? <TouchableOpacity onPress={navigationGoBack}>
           <Text style={styles.txtBack}>{'<'}</Text>
       </TouchableOpacity> : null}
       <View style={styles.viewTitle}>

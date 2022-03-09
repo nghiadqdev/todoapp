@@ -10,6 +10,10 @@ const screenStyles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: 'white',
   },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 });
 
 export default screenStyles;

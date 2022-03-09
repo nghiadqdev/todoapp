@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, FlatList, SafeAreaView } from
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import TodoListScreen from '../screens/TodoList';
+import CountryListScreen from '../screens/CountryList';
 import HeaderApp from '../component/headerApp';
 import { navigate, navigationRef } from './navigationService';
 import screenStyles from '../config/screenStyles';
@@ -56,7 +57,7 @@ function App() {
       <Stack.Navigator initialRouteName='Home' >
         <Stack.Screen options={{headerShown: false}} name="Home" component={HomeScreen} />
         <Stack.Screen options={{headerShown: false}} name="TodoList" component={TodoListScreen} />
-        <Stack.Screen options={{headerShown: false}} name="CountryList" component={HomeScreen} />
+        <Stack.Screen options={{headerShown: false}} name="CountryList" component={CountryListScreen} />
         <Stack.Screen options={{headerShown: false}} name="ImageGallety" component={HomeScreen} />
       </Stack.Navigator>
     </NavigationContainer>
