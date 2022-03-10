@@ -30,17 +30,19 @@ const CountryListScreen = ({navigation, route}) => {
     if (searchkey !== '') {
         await axios.get(`https://restcountries.com/v3.1/name/${searchkey}`)
           .then(res => {
-          const persons = res.data;
-          setListData(persons[0]?.altSpellings || [])
+            const persons = res.data;
+            setListData(persons[0]?.altSpellings || [])
+            setstatusLoad(1)
           })
           .catch(error => {
               showToast(toastRef, 'error')
               setListData([])
-          });
+              setstatusLoad(1)
+          })
     } else {
       setListData([])
+      setstatusLoad(1)
     }
-    setstatusLoad(1)
     clearTimeout(teset)
   }
   const handleChangeText = (text) => {
